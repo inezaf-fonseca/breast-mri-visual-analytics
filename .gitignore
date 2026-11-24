@@ -1,0 +1,23 @@
+
+# Ambientes virtuais Python
+.venv/
+venv/
+env/
+
+# Cache Python
+__pycache__/
+*.pyc
+
+# Ficheiros do sistema operativo
+.DS_Store
+Thumbs.db
+
+# Imagens de RM e dados dos casos
+media_data/
+
+# Ambientes e editores
+.vscode/
+.idea/
+
+# Logs
+*.log
