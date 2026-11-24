@@ -1489,25 +1489,11 @@ tbody tr:hover {
   white-space: nowrap;
 }
 
-/* Corrigir alinhamento da imagem principal */
-
-/* Este wrapper deve ter só o tamanho da imagem */
-
-/* Imagem principal */
-
-/* Bounding box por cima da imagem */
-
 #volumeBbox {
   position: absolute;
   border: 2px solid #f59e0b;
   pointer-events: none;
 }
-
-/* ============================= */
-
-/* CORREÇÃO DO SCROLL HORIZONTAL */
-
-/* ============================= */
 
 html {
   scroll-behavior: smooth;
@@ -1540,11 +1526,6 @@ body {
   max-width: 100%;
 }
 
-/* ============================= */
-
-/* IMAGEM PRINCIPAL CENTRADA */
-
-/* ============================= */
 
 .image-panel {
   width: 100%;
@@ -1595,17 +1576,8 @@ body {
   transform: none !important;
 }
 
-/* ============================= */
 
 /* COMPARAÇÃO DAS FASES */
-
-/* ============================= */
-
-/* ============================= */
-
-/* HEATMAP E TABELA SEM ESTICAR */
-
-/* ============================= */
 
 .heatmap-panel {
   padding-bottom: 26px;
@@ -1897,31 +1869,13 @@ canvas {
   line-height: 1.35;
 }
 
-/* Coloca a Interpretação Comparativa no espaço lateral esquerdo da secção */
 
-/* A área principal volta a ocupar a largura normal */
-
-/* Move a caixa de interpretação para a lateral esquerda */
-
-/* Remove título duplicado do gráfico, caso ainda exista */
-
-/* Em ecrãs pequenos, volta a ficar por baixo */
 
 @media (max-width: 1200px) {
 }
 
-/* Layout da comparação com a interpretação à esquerda */
-
-/* A caixa de interpretação fica na coluna esquerda */
-
-/* O conteúdo principal fica à direita */
-
 @media (max-width: 1200px) {
 }
-
-/* Permite que a caixa saia para a esquerda do cartão */
-
-/* Caixa lateral no espaço vazio à esquerda da comparação */
 
 .case-floating-insights .detail-list p {
   padding-bottom: 14px;
@@ -1948,9 +1902,6 @@ canvas {
   font-weight: 500;
 }
 
-/* Remove layouts antigos que empurravam a interpretação para dentro da comparação */
-
-/* Garante que não aparece título duplicado no gráfico */
 
 .case-comparison-chart::before {
   content: none !important;
@@ -1961,7 +1912,6 @@ canvas {
   margin-bottom: 8px;
 }
 
-/* Em ecrãs pequenos, a interpretação volta para dentro do fluxo */
 
 @media (max-width: 1200px) {
   .case-floating-insights {
@@ -1978,8 +1928,6 @@ canvas {
   }
 
 }
-
-/* FORÇAR posição da caixa Interpretação Comparativa */
 
 .case-comparison-panel {
   margin-top: 28px;
@@ -2484,7 +2432,7 @@ canvas {
   line-height: 1.2;
 }
 
-/* "Adicionar Dados" — visually separated as an action, not a vista */
+/* "Adicionar Dados" */
 
 .vista-nav-item-data {
   margin-left: 10px;
@@ -3195,10 +3143,6 @@ canvas {
 /* =========================================================
    RESPONSIVIDADE PARA MONITORES GRANDES / ESCALAS DO SO
    =========================================================
-   O projeto tinha o .container limitado a 1400px. Em monitores
-   com escala/zoom diferente isso fazia o dashboard ficar visualmente
-   muito pequeno e demasiado centrado. O layout passa a usar a largura
-   disponível e mantém breakpoints para ecrãs menores.
 */
 
 html,
@@ -3260,7 +3204,7 @@ body {
   margin: 0 auto;
 }
 
-/* Cabeçalho também aproveita a largura disponível */
+
 .topbar,
 .navbar {
   width: 100%;
@@ -3374,7 +3318,7 @@ body {
 }
 
 /* =============================================================
-   REFINAMENTO VISUAL 2026 — alterações apenas de apresentação
+   REFINAMENTO VISUAL — alterações apenas de apresentação
    Mantém IDs, lógica de filtros, cálculos, gráficos e interações.
    ============================================================= */
 :root {
@@ -3389,7 +3333,6 @@ body {
 
 body { background: var(--va-page); color: var(--va-ink); }
 
-/* Preservar a identidade atual, com menos altura no cabeçalho. */
 .topbar {
   padding-top: 17px;
   padding-bottom: 17px;
@@ -3402,7 +3345,6 @@ body { background: var(--va-page); color: var(--va-ink); }
 .navbar a { transition: color .18s ease; }
 .navbar a:hover { color: var(--va-blue); }
 
-/* Barra fixa menos alta, sem alterar a disposição dos controlos. */
 .filters-sticky-bar {
   padding-top: 8px;
   background: rgba(255, 255, 255, 0.98);
@@ -3420,7 +3362,6 @@ body { background: var(--va-page); color: var(--va-ink); }
 }
 .reset-filters-btn:hover { background: #edf3ff; }
 
-/* Aprofundamento visual subtil dos cartões, comum às três páginas. */
 .chart-card, .card {
   border: 1px solid rgba(222, 230, 243, 0.8);
   box-shadow: var(--va-shadow);
@@ -3429,13 +3370,12 @@ body { background: var(--va-page); color: var(--va-ink); }
 .chart-card:hover { box-shadow: 0 8px 25px rgba(28, 46, 83, 0.075); }
 .section-subtitle { color: var(--va-muted); }
 
-/* Visualizador médico: imagem destacada com fundo neutro escuro. */
+
 .real-image-area {
   background: #202938;
   border-color: #354257;
 }
 
-/* Controlos do visualizador: estilos coerentes com os filtros. */
 .volume-controls-inline select, .volume-control-item select,
 .image-controls button:not(.export-btn) {
   border: 1px solid var(--va-border);
@@ -3452,11 +3392,11 @@ body { background: var(--va-page); color: var(--va-ink); }
 }
 .image-controls button:not(.export-btn):hover { background: #edf3ff; border-color: #bad0fc; }
 
-/* Reforçar a legibilidade dos metadados em cartões laterais. */
+
 .vista1-sidebar .chart-card { border-radius: 17px; }
 .vista1-sidebar .detail-list p { line-height: 1.5; }
 
-/* Preferência de movimento reduzido, sem afetar funcionalidades. */
+
 @media (prefers-reduced-motion: reduce) {
   .chart-card, .filter-pill-wrap, .reset-filters-btn, .navbar a {
     transition: none !important;
@@ -3479,7 +3419,6 @@ body { background: var(--va-page); color: var(--va-ink); }
 
 .subtype-cm-card {
   position: relative;
-  /* Os tooltips das células podem ultrapassar o cartão sem serem cortados. */
   overflow: visible;
   border-radius: 20px;
   padding: 18px 16px 16px;
@@ -3681,7 +3620,7 @@ body { background: var(--va-page); color: var(--va-ink); }
 }
 
 
-/* Restauro cirúrgico do layout da Vista 2 aprovado anteriormente.
+/* Restauro do layout da Vista 2 aprovado anteriormente.
    Não altera gráficos, valores, comportamento ou outras vistas. */
 .roi-range-panel { margin: 18px 0 20px; }
 .roi-range-panel .chart-subnote { margin: 4px 0 10px; line-height: 1.5; }
