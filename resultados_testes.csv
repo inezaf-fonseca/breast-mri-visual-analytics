@@ -1,0 +1,14 @@
+﻿teste,caminho,repeticoes,status,mediana_ms,minimo_ms,maximo_ms,bytes_resposta,resultado
+Página Statistics,/,7,200,0.503,0.489,0.65,2172,PASSA
+Página Pipeline,/pipeline,7,200,3.275,3.048,3.758,7387,PASSA
+Página Analytics,/analytics,7,200,0.536,0.517,0.582,49038,PASSA
+Adicionar Dados,/analytics/upload,7,200,0.473,0.466,0.604,5461,PASSA
+API de datasets,/api/datasets,7,200,0.387,0.38,0.451,575,PASSA
+API de métricas,/api/model-metrics,7,200,0.353,0.349,0.379,744,PASSA
+API de casos importados,/api/uploaded-cases,7,200,0.362,0.353,0.376,3,PASSA
+Importação sem CSV (validação negativa),POST /api/upload-case,1,400,,,,52,PASSA
+CSV conjunto 1,/media/bcdataset_subset_20260313_114624/metadata.csv,7,200,0.615,0.598,1.456,7745,PASSA
+CSV conjunto 2,/media/bcdataset_subset_20260428_132406/slices_info.csv,7,200,0.599,0.593,0.601,30548,PASSA
+CSV conjunto 3,/media/bcdataset_subset_20260428_133158/slices_info.csv,7,200,0.595,0.533,0.609,15764,PASSA
+CSV conjunto 4,/media/bcdataset_subset_20260428_133535/slices_info.csv,7,200,0.535,0.532,0.618,10334,PASSA
+Uma imagem JPEG,/media/bcdataset_subset_20260313_114624/images/P-ISPY1-1010-000-1-22.jpg,7,200,0.613,0.603,1.031,24839,PASSA

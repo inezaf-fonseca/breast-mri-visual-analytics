@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adicionar Dados — Analytics</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='clinical-theme.css') }}">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo-box">📊</div>
+    <div>
+      <h1>Plataforma de Visual Analytics</h1>
+      <p>Com base no Pipeline de Classificação de Subtipos do Cancro da Mama</p>
+    </div>
+  </header>
+
+  <nav class="navbar">
+    <a href="{{ url_for('home') }}">Statistics</a>
+    <a href="{{ url_for('pipeline') }}">Pipeline</a>
+    <a href="{{ url_for('analytics') }}">Analytics</a>
+  </nav>
+
+  <div class="filters-sticky-bar">
+    <div class="filters-bar">
+      <div class="filters-bar-left">
+        <a href="{{ url_for('analytics') }}" class="upload-back-link">
+          <svg viewBox="0 0 18 18" fill="none" width="15" height="15">
+            <path d="M11 3L5 9l6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Voltar à Analytics
+        </a>
+      </div>
+    </div>
+    <nav class="vista-nav" aria-label="Navegação por secção">
+      <a href="{{ url_for('analytics') }}#vista-caso" class="vista-nav-item">
+        <span class="vn-num">1</span><span class="vn-label">Exploração do Caso</span>
+      </a>
+      <a href="{{ url_for('analytics') }}#vista-evolucao" class="vista-nav-item">
+        <span class="vn-num">2</span><span class="vn-label">Evolução Tumoral</span>
+      </a>
+      <a href="{{ url_for('analytics') }}#vista-3d" class="vista-nav-item">
+        <span class="vn-num">3</span><span class="vn-label">Reconstrução 3D</span>
+      </a>
+      <a href="{{ url_for('analytics') }}#vista-comparacao" class="vista-nav-item">
+        <span class="vn-num">4</span><span class="vn-label">Comparação de Casos</span>
+      </a>
+      <a href="{{ url_for('analytics') }}#vista-cnn" class="vista-nav-item">
+        <span class="vn-num">5</span><span class="vn-label">Avaliação CNN</span>
+      </a>
+      <a href="{{ url_for('upload_data') }}" class="vista-nav-item vista-nav-item-data active">
+        <span class="vn-num vn-icon">＋</span><span class="vn-label">Adicionar Dados</span>
+      </a>
+    </nav>
+  </div>
+
+  <main class="container">
+
+    <section class="vista-section" id="upload-page">
+      <div class="vista-header">
+        <span class="vista-badge">Gestão de Dados</span>
+        <h2 class="vista-title">Adicionar Novo Caso</h2>
+        <p class="vista-desc">Carrega novos casos clínicos (CSV de metadados + imagens MRI) para os disponibilizar em toda a plataforma de Analytics.</p>
+      </div>
+
+      <div class="chart-card upload-panel" id="upload-case-section">
+        <div class="card-header-row">
+          <h3>Novo Caso</h3>
+          <span class="upload-hint-pill">CSV de metadados + imagens MRI (.jpg)</span>
+        </div>
+        <p class="section-subtitle">
+          Carrega um CSV com as colunas <code>Patient_ID, Study_ID, Phase, Slice, Mol Subtype, X_min, X_max, Y_min, Y_max, Basename</code>
+          e as respetivas imagens de slice. Os novos casos ficam disponíveis de imediato em todos os filtros e vistas da Analytics.
+        </p>
+
+        <form id="uploadCaseForm" class="upload-form">
+          <div class="upload-dropzone" id="csvDropzone">
+            <input type="file" id="uploadCsvInput" accept=".csv" hidden>
+            <svg viewBox="0 0 24 24" fill="none" width="26" height="26">
+              <path d="M12 4v11m0 0l-4-4m4 4l4-4" stroke="#4B7BE5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="#4B7BE5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="upload-dz-text">Arrasta o ficheiro CSV ou <strong>clica para escolher</strong></span>
+            <span class="upload-dz-filename" id="csvFileName"></span>
+          </div>
+
+          <div class="upload-dropzone" id="imagesDropzone">
+            <input type="file" id="uploadImagesInput" accept=".jpg,.jpeg" multiple hidden>
+            <svg viewBox="0 0 24 24" fill="none" width="26" height="26">
+              <rect x="3" y="4" width="18" height="14" rx="2" stroke="#4B7BE5" stroke-width="1.8"/>
+              <circle cx="8" cy="9" r="1.5" fill="#4B7BE5"/>
+              <path d="M3 15l5-4 4 3 3-2 6 5" stroke="#4B7BE5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="upload-dz-text">Arrasta as imagens MRI (.jpg) ou <strong>clica para escolher</strong></span>
+            <span class="upload-dz-filename" id="imagesFileCount"></span>
+          </div>
+
+          <div class="upload-actions">
+            <button type="submit" id="uploadSubmitBtn" class="export-btn export-btn-primary" disabled>
+              Carregar Caso
+            </button>
+            <span class="upload-status" id="uploadStatus"></span>
+          </div>
+        </form>
+      </div>
+
+      <div class="chart-card" id="uploaded-cases-section" style="margin-top:20px;">
+        <h3>Casos Já Carregados</h3>
+        <p class="section-subtitle">Casos adicionados manualmente através desta página, já incluídos na plataforma de Analytics.</p>
+        <div id="uploadedCasesList" class="uploaded-cases-list">
+          <p class="uploaded-cases-empty">A carregar...</p>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="{{ url_for('static', filename='upload.js') }}"></script>
+</body>
+</html>

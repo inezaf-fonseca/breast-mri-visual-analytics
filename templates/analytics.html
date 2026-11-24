@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='clinical-theme.css') }}">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Three.js para reconstrução 3D volumétrica -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo-box">📊</div>
+    <div>
+      <h1>Plataforma de Visual Analytics</h1>
+      <p>Com base no Pipeline de Classificação de Subtipos do Cancro da Mama</p>
+    </div>
+  </header>
+
+  <nav class="navbar">
+    <a href="{{ url_for('home') }}">Statistics</a>
+    <a href="{{ url_for('pipeline') }}">Pipeline</a>
+    <a href="{{ url_for('analytics') }}" class="active">Analytics</a>
+  </nav>
+
+  <div class="filters-sticky-bar">
+    <div class="filters-bar">
+      <div class="filters-bar-left">
+        <span class="filters-label">Filtros rápidos</span>
+
+        <div class="filter-pill-wrap">
+          <svg class="filter-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="10" cy="7" rx="6" ry="3" stroke="#4B7BE5" stroke-width="1.5"/>
+            <path d="M4 7c0 1.657 2.686 3 6 3s6-1.343 6-3" stroke="#4B7BE5" stroke-width="1.5"/>
+            <path d="M4 10c0 1.657 2.686 3 6 3s6-1.343 6-3" stroke="#4B7BE5" stroke-width="1.5"/>
+            <path d="M4 13c0 1.657 2.686 3 6 3s6-1.343 6-3" stroke="#4B7BE5" stroke-width="1.5"/>
+          </svg>
+          <span class="filter-pill-label" id="datasetFilterLabel">Dataset</span>
+          <svg class="filter-chevron" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <select id="datasetFilter">
+            <option value="">Dataset</option>
+          </select>
+        </div>
+
+        <div class="filter-pill-wrap">
+          <svg class="filter-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10" cy="7" r="3.5" stroke="#4B7BE5" stroke-width="1.5"/>
+            <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="#4B7BE5" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span class="filter-pill-label" id="patientFilterLabel">Paciente</span>
+          <svg class="filter-chevron" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <select id="patientFilter">
+            <option value="">Paciente</option>
+          </select>
+        </div>
+
+        <div class="filter-pill-wrap">
+          <svg class="filter-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 3v14M10 3C10 3 6 6 6 10s4 7 4 7M10 3c0 0 4 3 4 7s-4 7-4 7" stroke="#4B7BE5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="10" cy="10" r="7" stroke="#4B7BE5" stroke-width="1.5"/>
+          </svg>
+          <span class="filter-pill-label" id="phaseFilterLabel">Fase</span>
+          <svg class="filter-chevron" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <select id="phaseFilter">
+            <option value="">Fase</option>
+          </select>
+        </div>
+
+        <div class="filter-pill-wrap">
+          <svg class="filter-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10" cy="10" r="3" stroke="#4B7BE5" stroke-width="1.5"/>
+            <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M14.36 5.64l-1.42 1.42M5.64 14.36l-1.42 1.42" stroke="#4B7BE5" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span class="filter-pill-label" id="subtypeFilterLabel">Subtipo molecular</span>
+          <svg class="filter-chevron" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <select id="subtypeFilter">
+            <option value="">Subtipo molecular</option>
+          </select>
+        </div>
+
+        <button id="resetFiltersBtn" class="reset-filters-btn">
+          <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" width="15" height="15">
+            <path d="M3 9a6 6 0 1 0 1.5-3.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 4.5V9h4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Limpar filtros
+        </button>
+      </div>
+
+      <div class="filters-bar-right">
+        <span class="filter-results-count" id="filterResultsCount">— resultados</span>
+
+        <button id="tableDrawerBtn" class="export-btn table-drawer-btn" title="Ver tabela de dados">
+          <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" width="14" height="14">
+            <rect x="2" y="3" width="14" height="2" rx="1" fill="currentColor"/>
+            <rect x="2" y="8" width="14" height="2" rx="1" fill="currentColor"/>
+            <rect x="2" y="13" width="14" height="2" rx="1" fill="currentColor"/>
+          </svg>
+          Tabela
+        </button>
+
+        <div class="filter-export-group">
+          <button id="exportCsvBtn" class="export-btn" title="Descarregar dados filtrados em CSV">
+            <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" width="14" height="14">
+              <path d="M9 2v9m0 0l-3.5-3.5M9 11l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3 13v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            CSV
+          </button>
+          <button id="exportMetaBtn" class="export-btn" title="Descarregar metadados do export (filtros, dataset, modelo) em JSON">
+            <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" width="14" height="14">
+              <path d="M5 2h6l3 3v9a1 1 0 01-1 1H5a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+              <path d="M11 2v3h3" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+              <path d="M6.5 9.5l-1.3 1.3 1.3 1.3M9.5 9.5l1.3 1.3-1.3 1.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Metadados
+          </button>
+          <button id="exportReportBtn" class="export-btn export-btn-primary" title="Gerar relatório PDF completo">
+            <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" width="14" height="14">
+              <path d="M5 2h6l3 3v9a1 1 0 01-1 1H5a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+              <path d="M11 2v3h3" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+              <path d="M6 9h6M6 11.5h6M6 6.5h2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            Relatório PDF
+          </button>
+        </div>
+      </div>
+    </div>
+    <nav class="vista-nav" aria-label="Navegação por secção">
+      <a href="#vista-tabela"     class="vista-nav-item">
+        <span class="vn-num">
+          <svg viewBox="0 0 14 14" fill="none" width="11" height="11"><rect x="1" y="1" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M1 5h12M5 5v7" stroke="currentColor" stroke-width="1.5"/></svg>
+        </span><span class="vn-label">Tabela</span>
+      </a>
+      <a href="#vista-caso"       class="vista-nav-item">
+        <span class="vn-num">1</span><span class="vn-label">Exploração do Caso</span>
+      </a>
+      <a href="#vista-evolucao"   class="vista-nav-item">
+        <span class="vn-num">2</span><span class="vn-label">Variação das Características da ROI</span>
+      </a>
+      <a href="#vista-3d"         class="vista-nav-item">
+        <span class="vn-num">3</span><span class="vn-label">Reconstrução 3D</span>
+      </a>
+      <a href="#vista-comparacao" class="vista-nav-item">
+        <span class="vn-num">4</span><span class="vn-label">Comparação de Casos</span>
+      </a>
+      <a href="#vista-cnn"        class="vista-nav-item">
+        <span class="vn-num">5</span><span class="vn-label">Avaliação CNN</span>
+      </a>
+      <a href="{{ url_for('upload_data') }}" class="vista-nav-item vista-nav-item-data">
+        <span class="vn-num vn-icon">＋</span><span class="vn-label">Adicionar Dados</span>
+      </a>
+    </nav>
+  </div>
+
+
+  <!-- Table drawer -->
+  <div id="tableDrawer" class="table-drawer" aria-hidden="true">
+    <div class="table-drawer-inner">
+      <div class="table-drawer-header">
+        <h3>Tabela de Dados por Slice</h3>
+        <button id="tableDrawerClose" class="table-drawer-close" aria-label="Fechar">✕</button>
+      </div>
+      <div class="table-tools">
+        <div class="table-tool">
+          <label for="tablePatientFilter">Paciente</label>
+          <select id="tablePatientFilter"><option value="">Todos</option></select>
+        </div>
+        <div class="table-tool">
+          <label for="tableSubtypeFilter">Subtipo</label>
+          <select id="tableSubtypeFilter"><option value="">Todos</option></select>
+        </div>
+        <div class="table-tool">
+          <label for="tablePhaseFilter">Fase</label>
+          <select id="tablePhaseFilter"><option value="">Todas</option></select>
+        </div>
+        <div class="table-tool table-search-tool">
+          <label for="tableSearchInput">Pesquisar</label>
+          <input type="text" id="tableSearchInput" placeholder="Imagem, paciente, dataset ou subtipo">
+        </div>
+        <button id="clearTableFiltersBtn" class="small-clear-btn">Limpar tabela</button>
+      </div>
+      <div class="table-wrapper table-drawer-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Imagem</th><th>Dataset</th><th>Fase</th><th>Slice</th>
+              <th>Subtipo</th><th>Largura ROI</th><th>Altura ROI</th><th>Área ROI</th>
+            </tr>
+          </thead>
+          <tbody id="casesTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div id="tableDrawerOverlay" class="table-drawer-overlay"></div>
+
+  <main class="container">
+
+  <!-- Tabela de pesquisa global -->
+  <!-- ══════════════════════════════════════════════════
+       VISTA 1 · Exploração do Caso
+  ══════════════════════════════════════════════════ -->
+  <section class="vista-section" id="vista-caso">
+    <div class="vista-header">
+      <span class="vista-badge">Vista 1</span>
+      <h2 class="vista-title">Exploração do Caso</h2>
+      <p class="vista-desc">Visualização de imagens de RM, slice a slice, deteção da lesão e metadados do caso selecionado.</p>
+    </div>
+
+    <div class="vista1-layout">
+
+      <!-- coluna central: MRI + Deteção de ROI -->
+      <div class="vista1-main">
+
+        <div class="chart-card image-panel" id="input-mri-section">
+          <h3>Visualizador de RM</h3>
+          <p id="activeCaseLabel" aria-live="polite" style="margin: 8px 0 12px; color: #526277; font-size: 0.9rem;">
+            Caso em análise: a carregar...
+          </p>
+
+          <div class="volume-controls-inline">
+            <div class="volume-control-item">
+              <label for="phaseSelect">Fase</label>
+              <select id="phaseSelect"></select>
+            </div>
+            <div class="volume-control-item volume-slider-group">
+              <label for="sliceSlider">Slice</label>
+              <input type="range" id="sliceSlider" min="0" max="0" value="0">
+              <span id="sliceValue">-</span>
+            </div>
+          </div>
+
+          <div class="image-area real-image-area">
+            <div class="mri-image-wrapper" id="volumeImageWrapper">
+              <img id="volumeImage" src="" alt="MRI slice">
+              <div class="bbox" id="volumeBbox"></div>
+            </div>
+          </div>
+
+          <div class="image-controls">
+            <button id="prevSliceBtn">Anterior</button>
+            <button id="nextSliceBtn">Seguinte</button>
+            <button id="exportSliceBtn" class="export-btn" style="margin-left:auto;" title="Descarregar a imagem MRI apresentada">
+              <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" width="14" height="14">
+                <path d="M9 2v9m0 0l-3.5-3.5M9 11l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 13v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Exportar Slice
+            </button>
+          </div>
+
+          <!-- Overview + Detail: barras de área da ROI em cada corte da fase. -->
+          <div class="roi-overview" aria-label="Visão geral das áreas da ROI por corte">
+            <div class="roi-overview-heading">
+              <div>
+                <strong>Área da ROI por corte</strong>
+                <p>Seleciona uma barra para abrir o corte correspondente no visualizador de RM.</p>
+              </div>
+              <span id="caseRoiOverviewCount" class="roi-overview-count"></span>
+            </div>
+            <div id="caseRoiOverviewBars" class="roi-overview-bars" role="group" aria-label="Selecionar corte pela área da ROI"></div>
+            <p id="caseRoiOverviewStatus" class="roi-overview-status" aria-live="polite">Sem cortes disponíveis.</p>
+          </div>
+        </div>
+
+        <div class="chart-card phase-compare-panel" id="roi-detection-section">
+          <h3>Deteção da ROI — Lesão ao Longo das Fases</h3>
+          <div class="phase-compare-grid" id="phaseCompareGrid"></div>
+        </div>
+
+      </div>
+
+      <!-- coluna lateral: metadados -->
+      <aside class="vista1-sidebar">
+
+        <div class="chart-card">
+          <h3>Visão Geral do Caso</h3>
+          <div class="detail-list">
+            <p><strong>Dataset:</strong> <span id="metaDataset">-</span></p>
+            <p><strong>Paciente:</strong> <span id="metaPatient">-</span></p>
+            <p><strong>Study:</strong> <span id="metaStudy">-</span></p>
+            <p><strong>Subtipo:</strong> <span id="metaSubtype">-</span></p>
+            <p><strong>Nº de fases:</strong> <span id="metaPhases">-</span></p>
+            <p><strong>Nº de slices:</strong> <span id="metaSlices">-</span></p>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3>Slice Selecionada</h3>
+          <div class="detail-list">
+            <p><strong>Imagem:</strong> <span id="detailId">-</span></p>
+            <p><strong>Dataset:</strong> <span id="detailDataset">-</span></p>
+            <p><strong>Paciente:</strong> <span id="vePatient">-</span></p>
+            <p><strong>Study:</strong> <span id="veStudy">-</span></p>
+            <p><strong>Subtipo:</strong> <span id="veSubtype">-</span></p>
+            <p><strong>Fase:</strong> <span id="currentPhase">-</span></p>
+            <p><strong>Slice:</strong> <span id="currentSlice">-</span></p>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3>Características da ROI</h3>
+          <div class="detail-list">
+            <p><strong>Largura:</strong> <span id="roiWidth">-</span></p>
+            <p><strong>Altura:</strong> <span id="roiHeight">-</span></p>
+            <p><strong>Área:</strong> <span id="roiArea">-</span></p>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3>Resumo da Fase</h3>
+          <div class="detail-list">
+            <p><strong>Slice com maior ROI:</strong> <span id="maxSliceLabel">-</span></p>
+            <p><strong>Área máxima:</strong> <span id="maxSliceArea">-</span></p>
+            <p><strong>Posição na fase:</strong> <span id="slicePositionInfo">-</span></p>
+          </div>
+        </div>
+
+        
+<div class="chart-card">
+  <h3>Resumo quantitativo do caso</h3>
+  <div class="detail-list">
+    <p><strong>Maior ROI nesta fase:</strong> <span id="insightMaxRoiSlice">-</span></p>
+
+    <p style="display: flex; justify-content: flex-start; gap: 5px;">
+      <strong>Área média das ROI nesta fase:</strong>
+      <span id="insightBestPhase">-</span>
+    </p>
+
+    <p><strong>Slice atual vs máximo:</strong> <span id="insightCurrentVsMax">-</span></p>
+  </div>
+</div>
+
+
+      </aside>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       VISTA 2 · Variação das Características da ROI
+  ══════════════════════════════════════════════════ -->
+  <section class="vista-section" id="vista-evolucao">
+    <div class="vista-header">
+      <span class="vista-badge">Vista 2</span>
+      <h2 class="vista-title">Variação das Características da ROI</h2>
+      <p class="vista-desc">Variação das áreas das bounding boxes ao longo das slices, intensidade média e comparação entre fases.</p>
+    </div>
+
+    <div class="chart-card roi-chart-panel" id="volume-exploration-section">
+      <h3>Área da ROI ao Longo das Slices</h3>
+      <div class="roi-range-panel" id="roiRangePanel">
+        <h4>Análise interativa de um intervalo de cortes</h4>
+        <p class="chart-subnote">Escolhe o primeiro e o último corte. Os indicadores são recalculados apenas para esse intervalo, na fase e caso selecionados.</p>
+        <div id="roiRangeControls" class="roi-range-controls">
+          <label for="roiRangeStart">Do corte
+            <select id="roiRangeStart" aria-label="Primeiro corte do intervalo"></select>
+          </label>
+          <label for="roiRangeEnd">Até ao corte
+            <select id="roiRangeEnd" aria-label="Último corte do intervalo"></select>
+          </label>
+        </div>
+        <div id="roiRangeResults" role="status" aria-live="polite">A analisar o intervalo selecionado...</div>
+        <p class="chart-subnote roi-range-note">Análise espacial e descritiva das caixas delimitadoras; não representa evolução temporal nem resultados individuais da 3D CNN.</p>
+      </div>
+      <div class="roi-brush-toolbar" aria-label="Seleção coordenada de vários cortes">
+        <button type="button" id="roiBrushToggle" aria-pressed="false">Ativar seleção múltipla</button>
+        <button type="button" id="roiBrushClear" disabled>Limpar seleção</button>
+        <span id="roiBrushStatus" role="status" aria-live="polite">Seleção múltipla desativada. O clique individual continua disponível.</span>
+      </div>
+      <div class="chart-container roi-area-chart-wrap">
+        <canvas id="roiAreaChart"></canvas>
+      </div>
+      <div class="roi-chart-legend" aria-label="Legenda do gráfico de áreas">
+        <span class="roi-legend-item"><span class="roi-legend-swatch line-blue"></span>Área da ROI</span>
+        <span class="roi-legend-item"><span class="roi-legend-swatch range-fill"></span>Intervalo selecionado</span>
+        <span class="roi-legend-item"><span class="roi-legend-swatch point-orange"></span>Maior variação de área</span>
+        <span class="roi-legend-item"><span class="roi-legend-swatch point-red"></span>Corte atualmente visualizado</span>
+        <span class="roi-legend-item"><span class="roi-legend-swatch roi-brush-legend-swatch"></span>Cortes selecionados (ligação entre vistas)</span>
+      </div>
+    </div>
+
+    <div class="chart-card roi-chart-panel" id="intensity-exploration-section">
+      <h3>Intensidade Média dos Píxeis na ROI ao Longo das Slices</h3>
+      <p class="chart-subnote">Intensidade média dos píxeis (0–255), previamente calculada para a ROI de cada slice.</p>
+      <div class="chart-container">
+        <canvas id="roiIntensityChart"></canvas>
+        <div id="roiIntensityEmpty" class="chart-empty-state" role="status" hidden>
+          <span class="chart-empty-icon" aria-hidden="true">i</span>
+          <strong>Dados de intensidade indisponíveis</strong>
+          <span>O conjunto de dados selecionado não inclui valores de intensidade média previamente calculados. Os restantes gráficos continuam disponíveis.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card heatmap-panel">
+      <h3>Mapa de Distribuição da Área da ROI</h3>
+      <div class="heatmap-legend">
+        <div class="legend-scale">
+          <span>Menor área</span>
+          <div class="legend-gradient"></div>
+          <span>Maior área</span>
+        </div>
+        <div class="heatmap-brush-legend" aria-label="Legenda dos cortes selecionados">
+          <span class="heatmap-brush-legend-swatch" aria-hidden="true"></span>
+          <span>Cortes selecionados</span>
+        </div>
+        <div class="legend-current">
+          <div class="legend-current-box"></div>
+          <span>Slice atual</span>
+        </div>
+      </div>
+      <div id="roiHeatmap" class="roi-heatmap"></div>
+    </div>
+
+    <div class="vista2-bar-charts vista2-intensity-only">
+      <div class="chart-card insight-card">
+        <h3>Intensidade Média dos Píxeis na ROI por Fase</h3>
+        <div class="phase-intensity-wrap">
+          <canvas id="intensityByPhaseChart"></canvas>
+          <div id="intensityByPhaseEmpty" class="chart-empty-state chart-empty-compact" role="status" hidden>
+            <span class="chart-empty-icon" aria-hidden="true">i</span>
+            <strong>Intensidade indisponível</strong>
+            <span>Os dados selecionados não incluem a intensidade média por fase.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       VISTA 3 · Reconstrução 3D
+  ══════════════════════════════════════════════════ -->
+  <section class="vista-section" id="vista-3d">
+    <div class="vista-header">
+      <span class="vista-badge">Vista 3</span>
+      <h2 class="vista-title">Reconstrução 3D</h2>
+      <p class="vista-desc">Reconstrução volumétrica aproximada do tumor com base no empilhamento das bounding boxes por slice.</p>
+    </div>
+
+    <div class="chart-card tumor-3d-panel" id="tumor-3d-section">
+      <h3>Reconstrução do Volume Tumoral em 3D</h3>
+      <p class="section-subtitle">
+        Reconstrução volumétrica aproximada do caso selecionado através do empilhamento das slices 2D. A escala sequencial de azul-claro a azul-escuro representa a área da ROI ao longo do volume; o corte selecionado é destacado a vermelho.
+      </p>
+      <div class="tumor-3d-toolbar">
+        <button id="tumor3DWireframeBtn">Estrutura de arame</button>
+        <button id="tumor3DSolidBtn">Modo sólido</button>
+        <button id="tumor3DResetBtn">Repor vista</button>
+        <div class="tumor-3d-zoom-group">
+          <button id="tumor3DZoomInBtn" title="Aproximar">＋</button>
+          <button id="tumor3DZoomOutBtn" title="Afastar">－</button>
+        </div>
+      </div>
+      <div id="tumor3DViewer" class="tumor-3d-viewer"></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       VISTA 4 · Comparação de Casos
+  ══════════════════════════════════════════════════ -->
+  <section class="vista-section" id="vista-comparacao">
+    <div class="vista-header">
+      <span class="vista-badge">Vista 4</span>
+      <h2 class="vista-title">Comparação de Casos</h2>
+      <p class="vista-desc">Comparação directa entre dois casos clínicos com análise da evolução da ROI por fase.</p>
+    </div>
+
+    <div class="chart-card case-comparison-panel" id="case-comparison-section">
+
+      <div class="vista4-top" style="display: block !important; grid-template-columns: none !important; margin-bottom: 24px;">
+        <div class="case-comparison-controls">
+          <div class="case-select-control">
+            <label for="caseASelect">Caso A</label>
+            <select id="caseASelect"></select>
+          </div>
+          <div class="case-select-control">
+            <label for="caseBSelect">Caso B</label>
+            <select id="caseBSelect"></select>
+          </div>
+          <div class="case-select-control">
+            <label for="caseComparePhaseSelect">Fase a comparar</label>
+            <select id="caseComparePhaseSelect"></select>
+          </div>
+          <div class="case-select-control">
+            <label for="caseCompareSliceSlider">
+              Posição relativa na fase: <span id="caseCompareSliceValue">50%</span>
+            </label>
+            <input type="range" id="caseCompareSliceSlider" min="0" max="100" value="50">
+          </div>
+        </div>
+
+      </div>
+
+      <div class="case-comparison-grid compact-case-grid">
+        <div class="case-compare-card compact-case-card">
+          <div class="case-card-header">
+            <h4 id="caseATitle">Caso A</h4>
+            <span class="case-subtype-pill" id="caseASubtype">-</span>
+          </div>
+          <div class="case-image-wrapper" id="caseAImageWrapper">
+            <img id="caseAImage" src="" alt="Caso A">
+            <div class="case-bbox" id="caseABbox"></div>
+          </div>
+          <div class="compact-case-metrics">
+            <div class="compact-metric"><span>Dataset</span><strong id="caseADataset">-</strong></div>
+            <div class="compact-metric"><span>Slice</span><strong id="caseASelectedSlice">-</strong></div>
+            <div class="compact-metric"><span>ROI</span><strong id="caseASelectedROI">-</strong></div>
+            <div class="compact-metric"><span>Maior ROI</span><strong id="caseAMaxROI">-</strong></div>
+          </div>
+          <span id="caseAPhases" style="display:none;"></span>
+          <span id="caseASlices" style="display:none;"></span>
+          <span id="caseAMeanROI" style="display:none;"></span>
+          <span id="caseABestSlice" style="display:none;"></span>
+        </div>
+
+        <div class="case-compare-card compact-case-card">
+          <div class="case-card-header">
+            <h4 id="caseBTitle">Caso B</h4>
+            <span class="case-subtype-pill" id="caseBSubtype">-</span>
+          </div>
+          <div class="case-image-wrapper" id="caseBImageWrapper">
+            <img id="caseBImage" src="" alt="Caso B">
+            <div class="case-bbox" id="caseBBbox"></div>
+          </div>
+          <div class="compact-case-metrics">
+            <div class="compact-metric"><span>Dataset</span><strong id="caseBDataset">-</strong></div>
+            <div class="compact-metric"><span>Slice</span><strong id="caseBSelectedSlice">-</strong></div>
+            <div class="compact-metric"><span>ROI</span><strong id="caseBSelectedROI">-</strong></div>
+            <div class="compact-metric"><span>Maior ROI</span><strong id="caseBMaxROI">-</strong></div>
+          </div>
+          <span id="caseBPhases" style="display:none;"></span>
+          <span id="caseBSlices" style="display:none;"></span>
+          <span id="caseBMeanROI" style="display:none;"></span>
+          <span id="caseBBestSlice" style="display:none;"></span>
+        </div>
+      </div>
+
+      <aside class="case-floating-insights" style="position: static !important; left: auto !important; top: auto !important; right: auto !important; width: 100% !important; max-width: none !important; box-sizing: border-box; margin: 24px 0;">
+          <h3>Interpretação Comparativa</h3>
+          <div class="detail-list comparative-side-list">
+            <p><strong>ROI máxima:</strong> <span id="compareInsightMaxROI">-</span></p>
+            <p><strong>Área média:</strong> <span id="compareInsightMeanROI">-</span></p>
+            <p><strong>ROI na posição atual:</strong> <span id="compareInsightSelectedROI">-</span></p>
+            <p><strong>Pico da ROI:</strong> <span id="compareInsightPeakTiming">-</span></p>
+          </div>
+        </aside>
+
+      <div class="case-comparison-chart">
+        <h4>Variação da Área da ROI na Fase Selecionada</h4>
+        <canvas id="caseComparisonChart"></canvas>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       VISTA 5 · Avaliação CNN
+  ══════════════════════════════════════════════════ -->
+  <section class="vista-section" id="vista-cnn">
+    <div class="vista-header">
+      <span class="vista-badge">Vista 5</span>
+      <h2 class="vista-title">Avaliação CNN</h2>
+      <p class="vista-desc">Resultados da validação externa dos classificadores 3D CNN em 98 casos da ULSA-Setúbal.</p>
+    </div>
+
+    <div class="vista5-layout">
+
+      <div class="vista5-matrices">
+        <div class="chart-card subtype-cm-card">
+          <h3>Luminal A</h3>
+          <p class="subtype-cm-subtitle">Classificador binário one-vs-all</p>
+          <div class="confusion-matrix">
+            <div class="cm-axis-pred">Previsto</div>
+            <div class="cm-axis-real">Real</div>
+            <div class="cm-col-header cm-col-sim">Sim</div>
+            <div class="cm-col-header cm-col-nao">Não</div>
+            <div class="cm-row-header cm-row-sim">Sim</div>
+            <div class="cm-row-header cm-row-nao">Não</div>
+
+            <div class="cm-cell cm-tp correct" id="Luminal A-tp-cell">
+              <span class="cm-value" id="Luminal A-tp">-</span>
+            </div>
+            <div class="cm-cell cm-fn error" id="Luminal A-fn-cell">
+              <span class="cm-value" id="Luminal A-fn">-</span>
+            </div>
+            <div class="cm-cell cm-fp error" id="Luminal A-fp-cell">
+              <span class="cm-value" id="Luminal A-fp">-</span>
+            </div>
+            <div class="cm-cell cm-tn correct" id="Luminal A-tn-cell">
+              <span class="cm-value" id="Luminal A-tn">-</span>
+            </div>
+          </div>
+        </div>
+        <div class="chart-card subtype-cm-card">
+          <h3>Luminal B</h3>
+          <p class="subtype-cm-subtitle">Classificador binário one-vs-all</p>
+          <div class="confusion-matrix">
+            <div class="cm-axis-pred">Previsto</div>
+            <div class="cm-axis-real">Real</div>
+            <div class="cm-col-header cm-col-sim">Sim</div>
+            <div class="cm-col-header cm-col-nao">Não</div>
+            <div class="cm-row-header cm-row-sim">Sim</div>
+            <div class="cm-row-header cm-row-nao">Não</div>
+
+            <div class="cm-cell cm-tp correct" id="Luminal B-tp-cell">
+              <span class="cm-value" id="Luminal B-tp">-</span>
+            </div>
+            <div class="cm-cell cm-fn error" id="Luminal B-fn-cell">
+              <span class="cm-value" id="Luminal B-fn">-</span>
+            </div>
+            <div class="cm-cell cm-fp error" id="Luminal B-fp-cell">
+              <span class="cm-value" id="Luminal B-fp">-</span>
+            </div>
+            <div class="cm-cell cm-tn correct" id="Luminal B-tn-cell">
+              <span class="cm-value" id="Luminal B-tn">-</span>
+            </div>
+          </div>
+        </div>
+        <div class="chart-card subtype-cm-card">
+          <h3>HER2-positivo</h3>
+          <p class="subtype-cm-subtitle">Classificador binário one-vs-all</p>
+          <div class="confusion-matrix">
+            <div class="cm-axis-pred">Previsto</div>
+            <div class="cm-axis-real">Real</div>
+            <div class="cm-col-header cm-col-sim">Sim</div>
+            <div class="cm-col-header cm-col-nao">Não</div>
+            <div class="cm-row-header cm-row-sim">Sim</div>
+            <div class="cm-row-header cm-row-nao">Não</div>
+
+            <div class="cm-cell cm-tp correct" id="HER2-enriched-tp-cell">
+              <span class="cm-value" id="HER2-enriched-tp">-</span>
+            </div>
+            <div class="cm-cell cm-fn error" id="HER2-enriched-fn-cell">
+              <span class="cm-value" id="HER2-enriched-fn">-</span>
+            </div>
+            <div class="cm-cell cm-fp error" id="HER2-enriched-fp-cell">
+              <span class="cm-value" id="HER2-enriched-fp">-</span>
+            </div>
+            <div class="cm-cell cm-tn correct" id="HER2-enriched-tn-cell">
+              <span class="cm-value" id="HER2-enriched-tn">-</span>
+            </div>
+          </div>
+        </div>
+        <div class="chart-card subtype-cm-card">
+          <h3>Triplo-negativo</h3>
+          <p class="subtype-cm-subtitle">Classificador binário one-vs-all</p>
+          <div class="confusion-matrix">
+            <div class="cm-axis-pred">Previsto</div>
+            <div class="cm-axis-real">Real</div>
+            <div class="cm-col-header cm-col-sim">Sim</div>
+            <div class="cm-col-header cm-col-nao">Não</div>
+            <div class="cm-row-header cm-row-sim">Sim</div>
+            <div class="cm-row-header cm-row-nao">Não</div>
+
+            <div class="cm-cell cm-tp correct" id="Triple Negative-tp-cell">
+              <span class="cm-value" id="Triple Negative-tp">-</span>
+            </div>
+            <div class="cm-cell cm-fn error" id="Triple Negative-fn-cell">
+              <span class="cm-value" id="Triple Negative-fn">-</span>
+            </div>
+            <div class="cm-cell cm-fp error" id="Triple Negative-fp-cell">
+              <span class="cm-value" id="Triple Negative-fp">-</span>
+            </div>
+            <div class="cm-cell cm-tn correct" id="Triple Negative-tn-cell">
+              <span class="cm-value" id="Triple Negative-tn">-</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="vista5-metrics">
+        <div class="chart-card insight-card">
+          <h3>Métricas de Desempenho dos Classificadores por Subtipo</h3>
+          <div class="metric-selector-row">
+            <label for="metricSelect">Métrica</label>
+            <select id="metricSelect">
+              <option value="accuracy">Exatidão (accuracy)</option>
+              <option value="precision">Precisão (precision)</option>
+              <option value="recall">Sensibilidade (recall)</option>
+              <option value="f1">Pontuação F1</option>
+              <option value="auc">AUC</option>
+              <option value="specificity">Especificidade</option>
+              <option value="balanced_accuracy">Balanced accuracy</option>
+              <option value="mcc">MCC (coeficiente de Matthews)</option>
+            </select>
+          </div>
+          <canvas id="modelMetricsChart"></canvas>
+          <div class="metric-ci-panel" id="metricConfidencePanel" hidden>
+            <h4 id="metricConfidenceTitle">Intervalos de confiança de 95%</h4>
+            <p class="metric-ci-intro">A linha representa o intervalo de confiança; o ponto indica o valor observado. Os intervalos são calculados pelo método binomial exato de Clopper–Pearson, a partir das matrizes de confusão da validação externa.</p>
+            <div class="metric-ci-axis" aria-hidden="true"><span>0%</span><span>50%</span><span>100%</span></div>
+            <div id="metricConfidenceContent" class="metric-ci-rows" aria-live="polite"></div>
+            <p class="metric-ci-footnote">Intervalos apresentados apenas para sensibilidade e precisão. Um número reduzido de casos origina intervalos mais largos.</p>
+          </div>
+        </div>
+
+        <div class="chart-card insight-card model-summary-card">
+          <h3>Conclusões Globais do Modelo</h3>
+          <div class="model-highlights">
+            <div class="model-highlight-item">
+              <span class="model-highlight-label">Melhor subtipo em AUC</span>
+              <strong class="model-highlight-value" id="bestAucSubtype">-</strong>
+            </div>
+            <div class="model-highlight-item">
+              <span class="model-highlight-label">Maior recall</span>
+              <strong class="model-highlight-value" id="bestRecallSubtype">-</strong>
+            </div>
+            <div class="model-highlight-item">
+              <span class="model-highlight-label">Mais falsos positivos</span>
+              <strong class="model-highlight-value" id="mostFpSubtype">-</strong>
+            </div>
+            <div class="model-highlight-item">
+              <span class="model-highlight-label">Mais falsos negativos</span>
+              <strong class="model-highlight-value" id="mostFnSubtype">-</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- Modal de selecção de âmbito do CSV -->
+<div id="csvModal" class="pdf-modal-overlay" aria-hidden="true">
+  <div class="pdf-modal" style="width:min(460px,92vw);">
+    <div class="pdf-modal-header">
+      <h3>Exportar CSV</h3>
+      <button id="csvModalClose" class="pdf-modal-close">✕</button>
+    </div>
+    <p class="pdf-modal-desc">O que pretendes exportar?</p>
+    <div class="pdf-vista-list">
+
+      <label class="pdf-vista-item csv-scope-item">
+        <input type="radio" name="csvScope" value="patient" checked>
+        <span class="pdf-vista-num">
+          <svg viewBox="0 0 16 16" fill="none" width="12" height="12">
+            <circle cx="8" cy="5.5" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M2 13.5c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <div>
+          <div>Paciente actual</div>
+          <div class="csv-scope-desc" id="csvScopePatientDesc">Apenas os slices do caso seleccionado</div>
+        </div>
+      </label>
+
+      <label class="pdf-vista-item csv-scope-item">
+        <input type="radio" name="csvScope" value="select">
+        <span class="pdf-vista-num">
+          <svg viewBox="0 0 16 16" fill="none" width="12" height="12">
+            <circle cx="4" cy="4" r="2" stroke="currentColor" stroke-width="1.5"/>
+            <circle cx="12" cy="4" r="2" stroke="currentColor" stroke-width="1.5"/>
+            <circle cx="8" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M4 6v2m8-2v2M6 12H5a3 3 0 01-3-3V9m8 3h1a3 3 0 003-3V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <div style="width:100%">
+          <div>Seleccionar pacientes</div>
+          <div class="csv-scope-desc">Escolhe quais os pacientes a incluir</div>
+          <div id="csvPatientCheckboxes" class="csv-patient-list" style="display:none;"></div>
+        </div>
+      </label>
+
+      <label class="pdf-vista-item csv-scope-item">
+        <input type="radio" name="csvScope" value="all">
+        <span class="pdf-vista-num">
+          <svg viewBox="0 0 16 16" fill="none" width="12" height="12">
+            <rect x="2" y="3" width="12" height="2" rx="1" fill="currentColor"/>
+            <rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor"/>
+            <rect x="2" y="11" width="12" height="2" rx="1" fill="currentColor"/>
+          </svg>
+        </span>
+        <div>
+          <div>Todos os dados filtrados</div>
+          <div class="csv-scope-desc" id="csvScopeAllDesc">Com os filtros activos actualmente</div>
+        </div>
+      </label>
+
+    </div>
+    <div class="pdf-modal-actions">
+      <button id="csvConfirmBtn" class="export-btn export-btn-primary" style="margin-left:auto;">
+        <svg viewBox="0 0 18 18" fill="none" width="14" height="14">
+          <path d="M9 2v9m0 0l-3.5-3.5M9 11l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 13v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Descarregar CSV
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de selecção de âmbito da exportação de Slice -->
+<div id="sliceExportModal" class="pdf-modal-overlay" aria-hidden="true">
+  <div class="pdf-modal" style="width:min(460px,92vw);">
+    <div class="pdf-modal-header">
+      <h3>Exportar Slice</h3>
+      <button id="sliceExportModalClose" class="pdf-modal-close">✕</button>
+    </div>
+    <p class="pdf-modal-desc">O que pretendes exportar?</p>
+    <div class="pdf-vista-list">
+
+      <label class="pdf-vista-item csv-scope-item">
+        <input type="radio" name="sliceScope" value="current" checked>
+        <span class="pdf-vista-num">
+          <svg viewBox="0 0 16 16" fill="none" width="12" height="12">
+            <rect x="3" y="3" width="10" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </span>
+        <div>
+          <div>Apenas este slice</div>
+          <div class="csv-scope-desc" id="sliceScopeCurrentDesc">A imagem MRI apresentada</div>
+        </div>
+      </label>
+
+      <label class="pdf-vista-item csv-scope-item" id="sliceScopePhaseOption">
+        <input type="radio" name="sliceScope" value="phase">
+        <span class="pdf-vista-num">
+          <svg viewBox="0 0 16 16" fill="none" width="12" height="12">
+            <rect x="2" y="3" width="12" height="2" rx="1" fill="currentColor"/>
+            <rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor"/>
+            <rect x="2" y="11" width="7" height="2" rx="1" fill="currentColor"/>
+          </svg>
+        </span>
+        <div style="width:100%">
+          <div>Uma ou mais fases</div>
+          <div class="csv-scope-desc" id="sliceScopePhaseDesc">Escolhe quais as fases a incluir</div>
+          <div id="sliceExportPhaseCheckboxes" class="csv-patient-list" style="display:none;"></div>
+        </div>
+      </label>
+
+      <label class="pdf-vista-item csv-scope-item">
+        <input type="radio" name="sliceScope" value="case">
+        <span class="pdf-vista-num">
+          <svg viewBox="0 0 16 16" fill="none" width="12" height="12">
+            <circle cx="4" cy="4" r="2" stroke="currentColor" stroke-width="1.5"/>
+            <circle cx="12" cy="4" r="2" stroke="currentColor" stroke-width="1.5"/>
+            <circle cx="8" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </span>
+        <div>
+          <div>Caso completo</div>
+          <div class="csv-scope-desc" id="sliceScopeCaseDesc">Todos os slices de todas as fases deste caso</div>
+        </div>
+      </label>
+
+      <label class="pdf-vista-item csv-scope-item">
+        <input type="radio" name="sliceScope" value="multi">
+        <span class="pdf-vista-num">
+          <svg viewBox="0 0 16 16" fill="none" width="12" height="12">
+            <rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/>
+            <rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/>
+            <rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/>
+            <rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </span>
+        <div style="width:100%">
+          <div>Vários casos</div>
+          <div class="csv-scope-desc" id="sliceScopeMultiDesc">Escolhe quais os casos e as fases a incluir</div>
+          <div id="sliceExportMultiWrap" style="display:none;">
+            <div class="csv-scope-desc" style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;">
+              <span>Casos:</span>
+              <span class="slice-export-toggle" id="sliceExportCaseScopeToggle">
+                <button type="button" class="pdf-toggle-btn slice-export-toggle-btn active" data-case-scope="filtered">Filtrados</button>
+                <button type="button" class="pdf-toggle-btn slice-export-toggle-btn" data-case-scope="all">Todos</button>
+              </span>
+            </div>
+            <div id="sliceExportCaseCheckboxes" class="csv-patient-list"></div>
+            <div class="csv-scope-desc" style="margin-top:8px;">Fases:</div>
+            <div id="sliceExportMultiPhaseCheckboxes" class="csv-patient-list"></div>
+          </div>
+        </div>
+      </label>
+
+    </div>
+
+    <div id="sliceExportProgressWrap" style="display:none;margin-top:10px;">
+      <div id="sliceExportSizeEstimate" class="csv-scope-desc" style="margin-bottom:6px;text-align:center;"></div>
+      <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.08);overflow:hidden;">
+        <div id="sliceExportProgressBar" style="height:100%;width:0%;background:currentColor;border-radius:3px;transition:width .15s ease;"></div>
+      </div>
+      <div id="sliceExportProgressLabel" class="csv-scope-desc" style="margin-top:6px;text-align:center;">A preparar...</div>
+      <div style="display:flex;justify-content:center;margin-top:8px;">
+        <button type="button" id="sliceExportCancelBtn" class="pdf-toggle-btn">Cancelar</button>
+      </div>
+    </div>
+
+    <div class="pdf-modal-actions">
+      <button id="sliceExportConfirmBtn" class="export-btn export-btn-primary" style="margin-left:auto;">
+        <svg viewBox="0 0 18 18" fill="none" width="14" height="14">
+          <path d="M9 2v9m0 0l-3.5-3.5M9 11l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 13v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Descarregar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de selecção de vistas para PDF -->
+<div id="pdfModal" class="pdf-modal-overlay" aria-hidden="true">
+  <div class="pdf-modal">
+    <div class="pdf-modal-header">
+      <h3>Gerar Relatório PDF</h3>
+      <button id="pdfModalClose" class="pdf-modal-close">✕</button>
+    </div>
+    <p class="pdf-modal-desc">Seleciona as vistas a incluir no relatório:</p>
+    <div class="pdf-vista-list">
+      <label class="pdf-vista-item">
+        <input type="checkbox" name="pdfVista" value="vista-caso" checked>
+        <span class="pdf-vista-num">1</span>
+        <span>Exploração do Caso</span>
+      </label>
+      <label class="pdf-vista-item">
+        <input type="checkbox" name="pdfVista" value="vista-evolucao" checked>
+        <span class="pdf-vista-num">2</span>
+        <span>Variação das Características da ROI</span>
+      </label>
+      <label class="pdf-vista-item">
+        <input type="checkbox" name="pdfVista" value="vista-3d" checked>
+        <span class="pdf-vista-num">3</span>
+        <span>Reconstrução 3D</span>
+      </label>
+      <label class="pdf-vista-item">
+        <input type="checkbox" name="pdfVista" value="vista-comparacao" checked>
+        <span class="pdf-vista-num">4</span>
+        <span>Comparação de Casos</span>
+      </label>
+      <label class="pdf-vista-item">
+        <input type="checkbox" name="pdfVista" value="vista-cnn" checked>
+        <span class="pdf-vista-num">5</span>
+        <span>Avaliação CNN</span>
+      </label>
+    </div>
+    <div class="pdf-modal-actions">
+      <button id="pdfSelectAll" class="pdf-toggle-btn">Selecionar tudo</button>
+      <button id="pdfDeselectAll" class="pdf-toggle-btn">Limpar</button>
+      <button id="pdfConfirmBtn" class="export-btn export-btn-primary" style="margin-left:auto;">
+        <svg viewBox="0 0 18 18" fill="none" width="14" height="14">
+          <path d="M5 2h6l3 3v9a1 1 0 01-1 1H5a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M11 2v3h3" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M6 9h6M6 11.5h6M6 6.5h2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Gerar PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <script src="{{ url_for('static', filename='analytics.js', v='roi-variation-20261114-1') }}"></script>
+</body>
+</html>
